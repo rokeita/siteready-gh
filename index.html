@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SiteReady GH</title>
+  <style>
+    :root { --ink:#132238; --muted:#617086; --paper:#f7f8fc; --line:#e4e8f0; --brand:#2563eb; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--ink); background:var(--paper); }
+    header { background:#fff; border-bottom:1px solid var(--line); padding:18px clamp(20px,4vw,56px); display:flex; justify-content:space-between; align-items:center; }
+    .logo { font-weight:800; letter-spacing:-.04em; font-size:1.25rem; } .logo span { color:var(--brand); }
+    .tag { color:var(--muted); font-size:.9rem; }
+    main { display:grid; grid-template-columns:minmax(280px,430px) minmax(0,1fr); gap:28px; max-width:1440px; margin:0 auto; padding:28px clamp(20px,4vw,56px) 56px; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:18px; padding:24px; box-shadow:0 12px 30px rgba(19,34,56,.05); }
+    h1 { margin:0 0 8px; font-size:1.7rem; letter-spacing:-.04em; } p { margin:0; color:var(--muted); line-height:1.55; }
+    form { display:grid; gap:15px; margin-top:24px; } label { display:grid; gap:7px; font-size:.88rem; font-weight:700; } input, textarea { width:100%; font:inherit; border:1px solid #cad3e0; border-radius:10px; padding:11px 12px; color:var(--ink); background:#fff; } textarea { resize:vertical; min-height:94px; } input:focus, textarea:focus { outline:3px solid rgba(37,99,235,.15); border-color:var(--brand); }
+    .row { display:grid; grid-template-columns:1fr 82px; gap:12px; } input[type="color"] { padding:5px; height:43px; }
+    button { border:0; border-radius:10px; padding:12px 14px; background:var(--brand); color:#fff; font:inherit; font-weight:800; cursor:pointer; } button:hover { filter:brightness(.94); }
+    .preview-wrap { min-width:0; } .preview-label { color:var(--muted); font-size:.82rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin:0 0 10px; }
+    .site { overflow:hidden; border-radius:18px; border:1px solid var(--line); background:white; min-height:620px; }
+    .hero { padding:64px clamp(26px,6vw,84px); color:white; background:linear-gradient(120deg,var(--site-color),#0f172a); min-height:320px; display:flex; flex-direction:column; justify-content:center; }
+    .kicker { font-size:.8rem; text-transform:uppercase; letter-spacing:.14em; opacity:.8; font-weight:800; } .hero h2 { font-size:clamp(2.2rem,5vw,4.7rem); max-width:700px; line-height:1.03; letter-spacing:-.06em; margin:12px 0; } .hero p { color:rgba(255,255,255,.84); max-width:580px; }
+    .wa { display:inline-flex; align-items:center; align-self:flex-start; text-decoration:none; margin-top:22px; background:#25d366; color:#082212; font-weight:800; padding:12px 16px; border-radius:999px; }
+    .services { padding:38px clamp(26px,6vw,84px); } .services h3 { font-size:1.45rem; margin:0 0 18px; letter-spacing:-.04em; } .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; } .card { padding:18px; border:1px solid var(--line); border-radius:12px; font-weight:700; background:#fbfcff; }
+    footer { padding:26px clamp(26px,6vw,84px); color:var(--muted); font-size:.9rem; border-top:1px solid var(--line); }
+    .tip { font-size:.84rem; margin-top:12px; }
+    @media (max-width:900px) { main { grid-template-columns:1fr; } .hero { min-height:270px; } }
+  </style>
+</head>
+<body>
+  <header><div class="logo">SiteReady <span>GH</span></div><div class="tag">Turn a business brief into a shareable website preview.</div></header>
+  <main>
+    <section class="panel">
+      <h1>Build a business preview</h1>
+      <p>Fill in the basics, then show the business owner a polished sample before you ask for the job.</p>
+      <form id="builder">
+        <label>Business name<input id="businessName" value="Ama's Kitchen" maxlength="60" /></label>
+        <label>What does the business do?<input id="businessType" value="Home-style Ghanaian meals, made fresh every day." maxlength="120" /></label>
+        <label>Services, one per line<textarea id="services">Lunch delivery
+Event catering
+Weekly meal plans</textarea></label>
+        <div class="row"><label>WhatsApp number<input id="whatsapp" value="233000000000" inputmode="numeric" maxlength="18" /></label><label>Brand colour<input id="color" type="color" value="#c2410c" /></label></div>
+        <button type="submit">Generate preview</button>
+      </form>
+      <p class="tip">This first version runs entirely in the browser. No account, payment card, or cloud service needed.</p>
+    </section>
+    <section class="preview-wrap"><div class="preview-label">Live preview</div>
+      <article class="site" id="site" style="--site-color:#c2410c">
+        <section class="hero"><div class="kicker">Cape Coast, Ghana</div><h2 id="previewName">Ama's Kitchen</h2><p id="previewType">Home-style Ghanaian meals, made fresh every day.</p><a class="wa" id="whatsappLink" href="#">Chat on WhatsApp</a></section>
+        <section class="services"><h3>What we offer</h3><div class="cards" id="serviceCards"></div></section>
+        <footer>Built with SiteReady GH. A simple website preview for local businesses.</footer>
+      </article>
+    </section>
+  </main>
+  <script>
+    const byId = (id) => document.getElementById(id);
+    const fields = { name: byId('businessName'), type: byId('businessType'), services: byId('services'), whatsapp: byId('whatsapp'), color: byId('color') };
+    function cleanNumber(value) { return value.replace(/[^0-9]/g, ''); }
+    function render() {
+      const name = fields.name.value.trim() || 'Your Business';
+      const type = fields.type.value.trim() || 'A great local business.';
+      const number = cleanNumber(fields.whatsapp.value);
+      byId('previewName').textContent = name;
+      byId('previewType').textContent = type;
+      byId('site').style.setProperty('--site-color', fields.color.value);
+      const link = byId('whatsappLink');
+      link.href = number ? `https://wa.me/${number}?text=${encodeURIComponent(`Hello ${name}, I found your website preview!`)}` : '#';
+      const cards = byId('serviceCards');
+      cards.replaceChildren();
+      const services = fields.services.value.split('\n').map(item => item.trim()).filter(Boolean);
+      (services.length ? services : ['Your first service']).forEach((service) => { const card = document.createElement('div'); card.className = 'card'; card.textContent = service; cards.appendChild(card); });
+    }
+    byId('builder').addEventListener('submit', (event) => { event.preventDefault(); render(); });
+    Object.values(fields).forEach((field) => field.addEventListener('input', render));
+    render();
+  </script>
+</body>
+</html>
