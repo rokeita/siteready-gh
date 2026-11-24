@@ -25,6 +25,7 @@
     .services { padding:38px clamp(26px,6vw,84px); } .services h3 { font-size:1.45rem; margin:0 0 18px; letter-spacing:-.04em; } .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; } .card { padding:18px; border:1px solid var(--line); border-radius:12px; font-weight:700; background:#fbfcff; }
     footer { padding:26px clamp(26px,6vw,84px); color:var(--muted); font-size:.9rem; border-top:1px solid var(--line); }
     .tip { font-size:.84rem; margin-top:12px; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; } .actions button { background:#eef2fb; color:var(--brand); font-weight:700; }
     @media (max-width:900px) { main { grid-template-columns:1fr; } .hero { min-height:270px; } }
   </style>
 </head>
@@ -42,6 +43,10 @@ Event catering
 Weekly meal plans</textarea></label>
         <div class="row"><label>WhatsApp number<input id="whatsapp" value="233000000000" inputmode="numeric" maxlength="18" /></label><label>Brand colour<input id="color" type="color" value="#c2410c" /></label></div>
         <button type="submit">Generate preview</button>
+        <div class="actions">
+          <button type="button" id="copyShare">Copy share link</button>
+          <button type="button" id="downloadSite">Download site</button>
+        </div>
       </form>
       <p class="tip">This first version runs entirely in the browser. No account, payment card, or cloud service needed.</p>
     </section>
@@ -57,6 +62,23 @@ Weekly meal plans</textarea></label>
     const byId = (id) => document.getElementById(id);
     const fields = { name: byId('businessName'), type: byId('businessType'), services: byId('services'), whatsapp: byId('whatsapp'), color: byId('color') };
     function cleanNumber(value) { return value.replace(/[^0-9]/g, ''); }
+    function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
+    function brief() {
+      return { n: fields.name.value, t: fields.type.value, s: fields.services.value, w: fields.whatsapp.value, c: fields.color.value };
+    }
+    function encodeBrief(data) { return Object.entries(data).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&'); }
+    function applyBrief(hash) {
+      const params = new URLSearchParams(hash.replace(/^#/, ''));
+      if (!params.get('n') && !params.get('w')) return false;
+      fields.name.value = params.get('n') ?? fields.name.value;
+      fields.type.value = params.get('t') ?? fields.type.value;
+      fields.services.value = params.get('s') ?? fields.services.value;
+      fields.whatsapp.value = params.get('w') ?? fields.whatsapp.value;
+      if (params.get('c') && /^#[0-9a-f]{6}$/i.test(params.get('c'))) fields.color.value = params.get('c');
+      return true;
+    }
+    function syncUrl() { history.replaceState(null, '', `#${encodeBrief(brief())}`); }
+    function shareUrl() { return `${location.origin}${location.pathname}#${encodeBrief(brief())}`; }
     function render() {
       const name = fields.name.value.trim() || 'Your Business';
       const type = fields.type.value.trim() || 'A great local business.';
@@ -71,8 +93,27 @@ Weekly meal plans</textarea></label>
       const services = fields.services.value.split('\n').map(item => item.trim()).filter(Boolean);
       (services.length ? services : ['Your first service']).forEach((service) => { const card = document.createElement('div'); card.className = 'card'; card.textContent = service; cards.appendChild(card); });
     }
-    byId('builder').addEventListener('submit', (event) => { event.preventDefault(); render(); });
-    Object.values(fields).forEach((field) => field.addEventListener('input', render));
+    function exportSite() {
+      const name = fields.name.value.trim() || 'your-business';
+      const doc = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="UTF-8" />\n<meta name="viewport" content="width=device-width, initial-scale=1.0" />\n<title>${escapeHtml(name)} | SiteReady GH</title>\n<style>${document.querySelector('style').textContent}</style>\n</head>\n<body>\n${byId('site').outerHTML}\n</body>\n</html>`;
+      const blob = new Blob([doc], { type: 'text/html' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'siteready-preview'}.html`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+    byId('builder').addEventListener('submit', (event) => { event.preventDefault(); render(); syncUrl(); });
+    Object.values(fields).forEach((field) => field.addEventListener('input', () => { render(); syncUrl(); }));
+    byId('copyShare').addEventListener('click', async () => {
+      syncUrl();
+      const button = byId('copyShare');
+      try { await navigator.clipboard.writeText(shareUrl()); button.textContent = 'Link copied!'; }
+      catch { button.textContent = 'Link is in the address bar'; }
+      setTimeout(() => { button.textContent = 'Copy share link'; }, 2500);
+    });
+    byId('downloadSite').addEventListener('click', exportSite);
+    if (!applyBrief(location.hash)) render();
     render();
   </script>
 </body>
